@@ -10,7 +10,7 @@
  * @author $LastChangedBy$
  */
 
-#include <StartingTrackVeto/StartingTrackVetoUtils.h>
+#include <StartingTrackVetoLE/StartingTrackVetoUtilsLE.h>
 
 #include <dataclasses/I3Vector.h>
 #include <dataclasses/I3Double.h>
@@ -35,7 +35,7 @@
 const double CHER_ANGLE = I3Constants::theta_cherenkov;
 const double SIN_CHER_ANGLE = sin( CHER_ANGLE );
 
-namespace StartingTrackVetoUtils {
+namespace StartingTrackVetoLEUtils {
 void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
         I3PhotonicsServicePtr photonService,
         std::vector<double> & timeEdges, std::string pulsesName,
@@ -44,7 +44,17 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
 {
     I3RecoPulseSeriesMapConstPtr pulses =
         frame->Get<I3RecoPulseSeriesMapConstPtr>(pulsesName);
-    I3ParticleConstPtr fit = frame->Get<I3ParticleConstPtr>(fitName);
+    I3ParticleConstPtr fit_0 = frame->Get<I3ParticleConstPtr>(fitName);
+    I3Particle* fit  = new I3Particle(); 
+    fit->SetPos((*fit_0).GetPos());
+    fit->SetTime((*fit_0).GetTime());
+    fit->SetDir((*fit_0).GetDir());
+    fit->SetEnergy((*fit_0).GetEnergy());
+    fit->SetLength((*fit_0).GetLength());
+    fit->SetType(I3Particle::unknown);
+    fit->SetShape(I3Particle::InfiniteTrack);
+    fit->SetLocationType((*fit_0).GetLocationType());
+    fit->SetFitStatus(I3Particle::OK);
     I3TimeWindowSeriesMapConstPtr calibrationErrata;
     bool has_calibrationErrata = false;
     if ( frame->Has( "CalibrationErrata" ) ){ calibrationErrata = frame->Get<I3TimeWindowSeriesMapConstPtr>("CalibrationErrata"); has_calibrationErrata = true;}
@@ -57,6 +67,11 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
     I3MapKeyDouble cherdatsStdDevs;
     I3MapKeyDouble contribdats;//Average Contributed Distance Along Tracks
     I3MapKeyDouble contribdatsStdDevs;
+    I3MapKeyVectorDouble probtimes;
+    I3MapKeyVectorDouble Qs;
+    I3MapKeyVectorDouble Ts;
+    I3MapKeyDouble mintimes;
+    I3MapKeyDouble maxtimes;
     I3VectorDouble coincObsQsList;//Coincident Observed Charges
     I3VectorDouble unnormedExQsList;//Unnormalized Expected Charges
     I3VectorDouble expectedBgsList;//Expected Background Charges
@@ -112,6 +127,8 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
             }
         }
         allObsQs[omkey] = qTot;
+	Qs[omkey] = qs;
+	Ts[omkey] = ts;
         log_debug("String,OM:%d,%d",omkey.GetString(),omkey.GetOM());
         log_debug("qTot= %f",qTot);
         //distance metric
@@ -134,8 +151,9 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
         {
             PhotonicsSource ps(*s);
             double meanPEs, ePointDistance, geoTime;
-            photonService->SelectSource ( meanPEs, NULL, ePointDistance, geoTime, ps, true);
+            photonService->SelectSource (meanPEs, NULL, ePointDistance, geoTime, ps, true);
             double *quantilesMuon = new double[timeEdges.size()];
+	    //printf("gT=%f",geoTime);
             if ( meanPEs > 0 )
             {
                 log_debug("mean pes=%f ePointDistance=%f geoTime=%f",meanPEs,ePointDistance, geoTime);
@@ -177,6 +195,7 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
                 sumQuantilesPerTime[i] += quantilesMuon[i];
                 log_debug("muon qunatiles=%f",quantilesMuon[i]);
             }
+	    probtimes[omkey]=sumQuantilesPerTime;
             quantileSum+=sumQuantilesPerSegmentTmp;
             log_debug("quantile sum=%f",quantileSum);
             sumQuantilesPerSegment.push_back( sumQuantilesPerSegmentTmp );
@@ -186,6 +205,7 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
         double maxQuantilePerTime=0;
         for ( unsigned int i = 0; i < timeEdges.size(); i++ )
         {
+	  // printf("%f",sumQuantilesPerTime);
             if ( sumQuantilesPerTime[i] > maxQuantilePerTime ){ maxQuantilePerTime = sumQuantilesPerTime[i]; }
         }
         //If for some reason you encounter a nan value, indicating something bad, record 0 and keep moving
@@ -213,7 +233,8 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
         std::vector<unsigned int> gtThreshIdxs;        
         for ( unsigned int i = 0; i < timeEdges.size(); i++ )
         {
-            log_debug("sum_quantiles_pertime=%f maxQuantilePerTime=%f",sumQuantilesPerTime[i],maxQuantilePerTime);
+	  //printf("sum_quantiles_pertime=%f maxQuantilePerTime=%f",sumQuantilesPerTime[i],maxQuantilePerTime);
+	  //log_debug("sum_quantiles_pertime=%f maxQuantilePerTime=%f",sumQuantilesPerTime[i],maxQuantilePerTime);
             if ( sumQuantilesPerTime[i] > .01 * maxQuantilePerTime ){ gtThreshIdxs.push_back(i); }
         }
         log_debug("index=%d",index);
@@ -225,6 +246,9 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
             maxTime=timeEdges[gtThreshIdxs[gtThreshIdxs.size()-1]+1];
         }
         log_debug("minTime=%f maxTime=%f",minTime,maxTime);
+	//printf("minTime=%f maxTime=%f",minTime,maxTime);
+	mintimes[omkey] = minTime;
+	maxtimes[omkey] = maxTime;  
         //If for some reason you encounter a nan value, indicating something bad, record 0 and keep moving
         if ( std::isnan( quantileSum ) ) { expectedBgsList.push_back( 0 ); }
         //The calculation below inserts 100 Hz of noise into every time bin
@@ -244,14 +268,14 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
     }
     //Book calculation pieces to the frame
     std::string namePrefix (pulsesName+"_"+fitName);
-    std::string nameSufixes[14] = { "allObsQs",
+    std::string nameSufixes[19] = { "allObsQs","qs","ts","minTimes","maxTimes","probtimes",
         "coincObsQsList", "unnormedExQsList","exbgs_list",
         "cads", "keyToIndexMap", "caddats", "caddatsStdDevs", "cherdats", 
         "cherdatsStdDevs", "contribdats", "contribdatsStdDevs" };
     log_debug("Names set");
     std::string sls = boost::lexical_cast<std::string>( segments->size() );
     std::vector<std::string> names;
-    for ( unsigned int i = 0; i < 14; i++)
+    for ( unsigned int i = 0; i < 19; i++)
     {
         std::string n = namePrefix + "_" + nameSufixes[i] + "_" +sls;
         if ( frame->Has(n) ){ frame->Delete(n); }
@@ -259,8 +283,14 @@ void ObtainEventInfo( I3FramePtr frame, I3VectorI3ParticleConstPtr segments,
         log_debug("%s",n.c_str());
     }
     log_debug("Begin booking");
+    
     int nameIdx=0;
     frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyDouble>(allObsQs) ); nameIdx++;
+    frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyVectorDouble>(Qs) ); nameIdx++;
+    frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyVectorDouble>(Ts) ); nameIdx++;
+    frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyDouble>(mintimes) ); nameIdx++;
+    frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyDouble>(maxtimes) ); nameIdx++;
+    frame -> Put( names[nameIdx], boost::make_shared<I3MapKeyVectorDouble>(probtimes) ); nameIdx++;
     frame -> Put( names[nameIdx], boost::make_shared<I3VectorDouble>(coincObsQsList) ); nameIdx++;
     frame -> Put( names[nameIdx], boost::make_shared<I3VectorDouble>(unnormedExQsList) ); nameIdx++;
     frame -> Put( names[nameIdx], boost::make_shared<I3VectorDouble>(expectedBgsList) ); nameIdx++;
@@ -358,6 +388,7 @@ void FindNormalization( I3FramePtr frame, std::string pulsesName,
             }
         }
         log_debug("minCherdat=%f",minCherdat);
+	//	printf("minCherdat=%f",minCherdat);
         //Stochastics can artificially increase the yeild, we only want this if they are at the beggining
         //because that implies a hadronic interaction from a neutrino
         if ( supress_stoch )
@@ -452,6 +483,8 @@ void FindNormalization( I3FramePtr frame, std::string pulsesName,
         //The step size constantly decreases by a factor of .9
         //Stop when your llh change is smaller than the tolerance
         log_debug("Normalizing");
+	//	printf("%zd\n",okKeyIdxs.size());
+	//printf("minCherdat=%f",minCherdat);
         if ( okKeyIdxs.size() > 0 )
 	{
 	  if(norm)
@@ -790,4 +823,4 @@ double AssessProbability( I3FramePtr frame, std::string pulsesName,
     log_debug("Done Booking");
     return cumPMiss;
 }
-} // namespace StartingTrackVetoUtils
+} // namespace StartingTrackVetoUtilsLE

@@ -10,8 +10,8 @@
  * @author $LastChangedBy$
  */
 
-#ifndef STARTINGTRACKVETOUTILS_H_INCLUDED
-#define STARTINGTRACKVETOUTILS_H_INCLUDED
+#ifndef STARTINGTRACKVETOLEUTILS_H_INCLUDED
+#define STARTINGTRACKVETOULETILS_H_INCLUDED
 
 #include <dataclasses/geometry/I3Geometry.h>
 #include <dataclasses/status/I3DetectorStatus.h>
@@ -21,7 +21,7 @@
 #include <photonics-service/I3PhotonicsService.h>
 #include <math.h>
 
-namespace StartingTrackVetoUtils {
+namespace StartingTrackVetoLEUtils {
     /* This is a namespace for functions and variables needed to calculate a Track Veto
      *
      */

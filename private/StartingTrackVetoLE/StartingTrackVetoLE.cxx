@@ -23,13 +23,13 @@
 #include <boost/make_shared.hpp>
 #include <boost/foreach.hpp>
 #include <math.h>
-#include <StartingTrackVeto/StartingTrackVeto.h>
-#include <StartingTrackVeto/StartingTrackVetoUtils.h>
+#include <StartingTrackVetoLE/StartingTrackVetoLE.h>
+#include <StartingTrackVetoLE/StartingTrackVetoLEUtils.h>
 
 
-I3_MODULE(StartingTrackVeto);
+I3_MODULE(StartingTrackVetoLE);
 
-    StartingTrackVeto::StartingTrackVeto(const I3Context &context)
+    StartingTrackVetoLE::StartingTrackVetoLE(const I3Context &context)
 : I3ConditionalModule(context)
 {
     AddParameter("Pulses", "Name of pulse series to use", "SplitInIcePulses");
@@ -58,7 +58,7 @@ I3_MODULE(StartingTrackVeto);
             "BadDomsList");
 }
 
-void StartingTrackVeto::Configure()
+void StartingTrackVetoLE::Configure()
 {
     GetParameter("Pulses", pulsesName_);
     GetParameter("Fit", fitName_);
@@ -78,7 +78,7 @@ void StartingTrackVeto::Configure()
     GetParameter("BadDOMs", badDOMsName_);
 }
 
-void StartingTrackVeto::Geometry(I3FramePtr frame)
+void StartingTrackVetoLE::Geometry(I3FramePtr frame)
 {
     geo_ = frame->Get<I3GeometryConstPtr>(geoName_);
     if (!geo_)
@@ -87,7 +87,7 @@ void StartingTrackVeto::Geometry(I3FramePtr frame)
     PushFrame(frame);
 }
 
-void StartingTrackVeto::DetectorStatus(I3FramePtr frame)
+void StartingTrackVetoLE::DetectorStatus(I3FramePtr frame)
 {
     if (badDOMsName_ != "")
     {
@@ -115,7 +115,7 @@ void StartingTrackVeto::DetectorStatus(I3FramePtr frame)
     PushFrame(frame);
 }
 
-void StartingTrackVeto::Physics(I3FramePtr frame)
+void StartingTrackVetoLE::Physics(I3FramePtr frame)
 {
     
     log_debug("%s",fitName_.c_str());
@@ -133,22 +133,22 @@ void StartingTrackVeto::Physics(I3FramePtr frame)
         //Given a track, photonics service, and pulse series, find the per DOM expectations and observations. 
         //Where the expectations and observations match define the region of the observed muon.
         //Make the DOM -> Track mappings for later use
-        StartingTrackVetoUtils::ObtainEventInfo( frame, segments, photonicsService_,
+        StartingTrackVetoLEUtils::ObtainEventInfo( frame, segments, photonicsService_,
                 timeEdges, pulsesName_, fitName_,
                 minCADDist_, geo_, boost::make_shared<I3VectorOMKey>(badDOMs_) );
         //Where the expectations and observations match in the defined region of the observed muon make an estimate
         //of the scale needed to best describe the event with a uniform light yield.
-        StartingTrackVetoUtils::FindNormalization( frame, pulsesName_, fitName_,
+        StartingTrackVetoLEUtils::FindNormalization( frame, pulsesName_, fitName_,
                 segments->size(), pow( 10, -10 ),
 						   1000, supressStoch_, cascade_, norm_ );
         //Find the first and last hit in the observed muon region by three different metrics. 
         //Map the hit DOMs back onto the track via the closest approach, cherenkov, and yeild weighted average methods
         //Estimate the muon region length using the first and last hit DOMs
         //If possible, estimate the uncertainty of their mapping point onto the track.
-        StartingTrackVetoUtils::FindDistances( frame, pulsesName_, fitName_,
+        StartingTrackVetoLEUtils::FindDistances( frame, pulsesName_, fitName_,
                 segments->size() );
         //Calculate the poisson probability of having no hits on the DOMs encountered before the muon region, if there are any.
-        double pMiss = StartingTrackVetoUtils::AssessProbability( frame, pulsesName_,
+        double pMiss = StartingTrackVetoLEUtils::AssessProbability( frame, pulsesName_,
                 fitName_, segments->size(),
                 datType_,
                 stdDevSp_ );

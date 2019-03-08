@@ -11,8 +11,8 @@
  */
 
 
-#ifndef STARTINGTRACKVETO_H_INCLUDED
-#define STARTINGTRACKVETO_H_INCLUDED
+#ifndef STARTINGTRACKVETOLE_H_INCLUDED
+#define STARTINGTRACKVETOLE_H_INCLUDED
 
 #include <icetray/OMKey.h>
 #include <dataclasses/geometry/I3Geometry.h>
@@ -25,17 +25,17 @@
 #include <boost/foreach.hpp>
 #include <algorithm>
 #include <vector>
-#include <StartingTrackVeto/StartingTrackVetoUtils.h>
+#include <StartingTrackVetoLE/StartingTrackVetoLEUtils.h>
 
 
 /**
- * @class \StartingTrackVeto
+ * @class \StartingTrackVetoLE
  * @brief Estimates an events startingness using photon tables,
  */
 
-class StartingTrackVeto : public I3ConditionalModule {
+class StartingTrackVetoLE : public I3ConditionalModule {
 public:
-    StartingTrackVeto(const I3Context &);
+    StartingTrackVetoLE(const I3Context &);
 
     void Configure();
     void Physics(I3FramePtr frame);
@@ -62,6 +62,6 @@ private:
     I3GeometryConstPtr geo_;
     I3VectorOMKey badDOMs_;
 
-    SET_LOGGER ("StartingTrackVeto");
+    SET_LOGGER ("StartingTrackVetoLE");
 };
-#endif // STARTINGTRACKVETO_H_INCLUDED
+#endif // STARTINGTRACKVETOLE_H_INCLUDED

@@ -64,6 +64,8 @@ Some configuration options are available to the user
 * Parameter:"Time_Edge_NSteps"->Number of steps for the time edges (Default:10100/100, in order to use the photon tables you have to request the number of PE in some time bin. This is the number of steps in that bin range.) **Keep in mind the more bins you reqest, the longer the calculation takes**
 * Parameter:"Min_CAD_Dist"->Minimum closest approach distance considered for calculation (Default:125, DOMs within this distance of the track contribute to the calculations, outside is ignored. If you think you need a larger radius than 125 you likely should try a different track. Again this is largely a time optimization.)
 * Parameter:"Supress_Stochastics"->Apply stochastic supression? (Default:false, At high energies you can remove the effect of stochastics by removing large numbers of photons too far away, and too close. See Note 1 below.)
+* Parameter:"Cascade"-> for LE events. In that case not all DOMs in Muon region are hit, so program would  only use those that were. At HE it's assumed that all DOMs in munon region are hit.
+* Parameter:"Norm"->Turn off/on handrolled minimization. For LE muons are minimum ionising, so charge scaling isn't necessay.
 * Parameter:"Miss_Prob_Thresh"->Miss probability threshold for rejection (Default:1, the outcome of the calculation is a probability representing the probability of missing this event if it were an incoming muon, see Note 1 for a definition. The module will cut events above this value.)
 * Parameter:"Distance_Along_Track_Type"->Options:
 
