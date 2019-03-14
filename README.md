@@ -1,7 +1,7 @@
 # STV
-Low energy starting track veto
+Low energy starting track veto, modification of K.Jero's StartingTrackVeto
 
-STV.py is the main script. How to run:
+/resourses/examples/STV.py is the main script. How to run:
 
 python STV.py -i /data/sim/DeepCore/2018/pass2/gcd/GeoCalibDetectorStatus_AVG_55697-57531_PASS2_SPE_withScaledNoise.i3.gz /data/sim/DeepCore/2018/pass2/genie/level2/140000/NuMu_140000_000001_level12.i3.gz -o test --ne 10 --sk 0 2>/dev/null
 
@@ -15,4 +15,4 @@ STV_utilities.py contains small supporting finctions
 
 STV_cuts.py has precuts
 
-RunTrackHits.py is an exmple of running TrackHits module only, it doesn't depend on other "STV_*" files.
+If you want to run STV only, without direction search algorithm, find "DoSTV" module in STV.py and STV_modules.py
